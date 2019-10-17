@@ -40,7 +40,7 @@ class FinalStack extends CardStack
 		removeAll();
 		if (!empty())
 		{
-			add(Solitaire.moveCard(this.getLast(), 1, 1));
+			add(BaldEagle.moveCard(this.getLast(), 1, 1));
 		} else
 		{
 			// draw back of card if empty

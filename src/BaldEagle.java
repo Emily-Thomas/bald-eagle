@@ -20,7 +20,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
-public class Solitaire
+public class BaldEagle
 {
 	// CONSTANTS
 	public static final int TABLE_HEIGHT = Card.CARD_HEIGHT * 4;
@@ -39,7 +39,7 @@ public class Solitaire
 	private static CardStack deck; // populated with standard 52 card deck
 
 	// GUI COMPONENTS (top level)
-	private static final JFrame frame = new JFrame("Klondike Solitaire");
+	private static final JFrame frame = new JFrame("Bald Eagle Solitaire");
 	protected static final JPanel table = new JPanel();
 	// other components
 	private static JEditorPane gameTitle = new JEditorPane("text/html", "");
@@ -71,8 +71,8 @@ public class Solitaire
 	// add/subtract points based on gameplay actions
 	protected static void setScore(int deltaScore)
 	{
-		Solitaire.score += deltaScore;
-		String newScore = "Score: " + Solitaire.score;
+		BaldEagle.score += deltaScore;
+		String newScore = "Score: " + BaldEagle.score;
 		scoreBox.setText(newScore);
 		scoreBox.repaint();
 	}
@@ -80,13 +80,13 @@ public class Solitaire
 	// GAME TIMER UTILITIES
 	protected static void updateTimer()
 	{
-		Solitaire.time += 1;
+		BaldEagle.time += 1;
 		// every 10 seconds elapsed we take away 2 points
-		if (Solitaire.time % 10 == 0)
+		if (BaldEagle.time % 10 == 0)
 		{
 			setScore(-2);
 		}
-		String time = "Seconds: " + Solitaire.time;
+		String time = "Seconds: " + BaldEagle.time;
 		timeBox.setText(time);
 		timeBox.repaint();
 	}
@@ -160,34 +160,32 @@ public class Solitaire
 			JScrollPane scroll;
 			JEditorPane rulesTextPane = new JEditorPane("text/html", "");
 			rulesTextPane.setEditable(false);
-			String rulesText = "<b>Klondike Solitaire Rules</b>"
-					+ "<br><br> (From Wikipedia) Taking a shuffled standard 52-card deck of playing cards (without Jokers),"
-					+ " one upturned card is dealt on the left of the playing area, then six downturned cards"
-					+ " (from left to right).<p> On top of the downturned cards, an upturned card is dealt on the "
-					+ "left-most downturned pile, and downturned cards on the rest until all piles have an "
-					+ "upturned card. The piles should look like the figure to the right.<p>The four foundations "
-					+ "(light rectangles in the upper right of the figure) are built up by suit from Ace "
-					+ "(low in this game) to King, and the tableau piles can be built down by alternate colors,"
-					+ " and partial or complete piles can be moved if they are built down by alternate colors also. "
-					+ "Any empty piles can be filled with a King or a pile of cards with a King.<p> The point of "
-					+ "the game is to build up a stack of cards starting with 2 and ending with King, all of "
-					+ "the same suit. Once this is accomplished, the goal is to move this to a foundation, "
-					+ "where the player has previously placed the Ace of that suit. Once the player has done this, "
-					+ "they will have \"finished\" that suit- the goal being, of course, to finish all suits, "
-					+ "at which time the player will have won.<br><br><b> Scoring </b><br><br>"
-					+ "Moving cards directly from the Waste stack to a Foundation awards 10 points. However, "
-					+ "if the card is first moved to a Tableau, and then to a Foundation, then an extra 5 points "
-					+ "are received for a total of 15. Thus in order to receive a maximum score, no cards should be moved "
-					+ "directly from the Waste to Foundation.<p>	Time can also play a factor in Windows Solitaire, if the Timed game option is selected. For every 10 seconds of play, 2 points are taken away."
-					+ "<b><br><br>Notes On My Implementation</b><br><br>"
-					+ "Drag cards to and from any stack. As long as the move is valid the card, or stack of "
-					+ "cards, will be repositioned in the desired spot. The game follows the standard scoring and time"
-					+ " model explained above with only one waste card shown at a time."
-					+ "<p> The timer starts running as soon as "
-					+ "the game begins, but it may be paused by pressing the pause button at the bottom of"
-					+ "the screen. ";
+			String rulesText = "<b>Bald Eagle Solitaire Rules</b>"
+					+ "<br><br>[From Goodsol]<br><br><b>Objective</b><br>To move all cards to the foundations.<br><br>"
+					+ "<b>Layout</b><br><\u2022 4 foundation piles (top) - build up in suit from the rank of first "
+					+ "card dealt to the first pile, wrapping from King to Ace as  necessary, until each pile contains "
+					+ "13 cards.<br><br>\u2022 8 tableau piles (the wings) - build down in suit, limit of 3 cards per "
+					+ "pile, wrapping from Ace to King as necessary. Groups of cards may be moved as as a unit if they "
+					+ "are in sequence down in suit. Spaces are filled from the reserve until it is empty, then by any "
+					+ "card. At the start of the game, 1 card is dealt face up to each pile.<br><br>\u2022 reserve "
+					+ "(middle) - top card is available for play on the foundations or tableau. At the start of the "
+					+ "game, 17 cards are dealt to this pile.<br><br>\u2022 stock (face down, bottom left) - turn over "
+					+ "3 cards at a time to the waste by clicking during the first deal, 2 cards at a time during the "
+					+ "2nd deal, and 1 card at a time during the last deal. Two redeals.<br><br>\u2022 waste (next to "
+					+ "stock) - top card is available for play on the foundations or tableau.<br><br><b>Scoring</b><br>"
+					+ "Moving cards directly from the Waste stack to a Foundation awards 10 points. However, if the "
+					+ "card is first moved to a Tableau, and then to a Foundation, then an extra 5 points are received "
+					+ "for a total of 15. Thus in order to receive a maximum score, no cards should be moved directly "
+					+ "from the Waste to Foundation.<p>Time can also play a factor in Windows Solitaire, if the Timed "
+					+ "game option is selected. For every 10 seconds of play, 2 points are taken away."
+					+ "<b><br><br>Implementation Notes</b><br>"
+					+ "Drag cards to and from any stack. As long as the move is valid the card, or stack of cards, "
+					+ "be repositioned in the desired spot. The game follows the standard scoring and time model "
+					+ "explained above with only one waste card shown at a time.<p>The timer starts running as soon as "
+					+ "the game begins, but it may be paused by pressing the pause button at the bottom of the screen.";
 			rulesTextPane.setText(rulesText);
-			ruleFrame.add(scroll = new JScrollPane(rulesTextPane));
+			rulesTextPane.setCaretPosition(0);
+			ruleFrame.add(new JScrollPane(rulesTextPane));
 
 			ruleFrame.setVisible(true);
 		}
@@ -196,7 +194,7 @@ public class Solitaire
 	/*
 	 * This class handles all of the logic of moving the Card components as well
 	 * as the game logic. This determines where Cards can be moved according to
-	 * the rules of Klondike solitiaire
+	 * the rules of Bald Eagle solitiaire
 	 */
 	private static class CardMovementManager extends MouseAdapter
 	{
@@ -323,7 +321,7 @@ public class Solitaire
 				if (prevCard != null)
 					table.remove(prevCard);
 				Card c = deck.pop().setFaceup();
-				table.add(Solitaire.moveCard(c, SHOW_POS.x, SHOW_POS.y));
+				table.add(BaldEagle.moveCard(c, SHOW_POS.x, SHOW_POS.y));
 				c.repaint();
 				table.repaint();
 				prevCard = c;
@@ -441,10 +439,10 @@ public class Solitaire
 				{
 					dest = playCardStack[x];
 					// MOVING TO POPULATED STACK
-					if (card.getFaceStatus() == true && dest.contains(stop) && source != dest && !dest.empty()
+					if (card.getFaceStatus() && dest.contains(stop) && source != dest && !dest.empty()
 							&& validPlayStackMove(card, dest.getFirst()) && transferStack.showSize() == 1)
 					{
-						Card c = null;
+						Card c;
 						if (sourceIsFinalDeck)
 							c = source.pop();
 						else
@@ -476,7 +474,7 @@ public class Solitaire
 						break;
 					} else if (dest.empty() && card.getValue() == Card.Value.KING && transferStack.showSize() == 1)
 					{// MOVING TO EMPTY STACK, ONLY KING ALLOWED
-						Card c = null;
+						Card c;
 						if (sourceIsFinalDeck)
 							c = source.pop();
 						else
@@ -563,7 +561,7 @@ public class Solitaire
 				{
 					dest = final_cards[x];
 
-					if (card.getFaceStatus() == true && source != null && dest.contains(stop) && source != dest)
+					if (card.getFaceStatus() && source != null && dest.contains(stop) && source != dest)
 					{// TO EMPTY STACK
 						if (dest.empty())// empty final should only take an ACE
 						{
