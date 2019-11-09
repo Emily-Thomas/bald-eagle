@@ -24,17 +24,18 @@ public class BaldEagle
 {
 	// CONSTANTS
 	public static final int TABLE_HEIGHT = Card.CARD_HEIGHT * 4;
-	public static final int TABLE_WIDTH = (Card.CARD_WIDTH * 7) + 100;
+	public static final int TABLE_WIDTH = (Card.CARD_WIDTH * 8) + 100;
 	public static final int NUM_FINAL_DECKS = 4;
-	public static final int NUM_PLAY_DECKS = 7;
+	public static final int NUM_PLAY_DECKS = 8;
 	public static final Point DECK_POS = new Point(5, 5);
 	public static final Point SHOW_POS = new Point(DECK_POS.x + Card.CARD_WIDTH + 5, DECK_POS.y);
-	public static final Point FINAL_POS = new Point(SHOW_POS.x + Card.CARD_WIDTH + 150, DECK_POS.y);
+	public static final Point FINAL_POS = new Point(SHOW_POS.x + Card.CARD_WIDTH + 5, DECK_POS.y);
 	public static final Point PLAY_POS = new Point(DECK_POS.x, FINAL_POS.y + Card.CARD_HEIGHT + 30);
 
 	// GAMEPLAY STRUCTURES
-	private static FinalStack[] final_cards;// Foundation Stacks
-	private static CardStack[] playCardStack; // Tableau stacks
+	private static FinalStack[] final_cards;// foundation stacks
+	private static CardStack[] playCardStack; // tableau stacks
+    private static CardStack reserve; // reserve pile
 	private static final Card newCardPlace = new Card();// waste card spot
 	private static CardStack deck; // populated with standard 52 card deck
 
@@ -59,6 +60,7 @@ public class BaldEagle
 	private static boolean timeRunning = false;// timer running?
 	private static int score = 0;// keep track of the score
 	private static int time = 0;// keep track of seconds elapsed
+	private static int newGameCount = 0;
 
 	// moves a card to abs location within a component
 	protected static Card moveCard(Card c, int x, int y)
@@ -80,14 +82,14 @@ public class BaldEagle
 	// GAME TIMER UTILITIES
 	protected static void updateTimer()
 	{
-		BaldEagle.time += 1;
+		time += 1;
 		// every 10 seconds elapsed we take away 2 points
-		if (BaldEagle.time % 10 == 0)
+		if (time % 10 == 0)
 		{
 			setScore(-2);
 		}
-		String time = "Seconds: " + BaldEagle.time;
-		timeBox.setText(time);
+		String timeText = "Seconds: " + time;
+		timeBox.setText(timeText);
 		timeBox.repaint();
 	}
 
@@ -194,7 +196,7 @@ public class BaldEagle
 	/*
 	 * This class handles all of the logic of moving the Card components as well
 	 * as the game logic. This determines where Cards can be moved according to
-	 * the rules of Bald Eagle solitiaire
+	 * the rules of Bald Eagle solitaire
 	 */
 	private static class CardMovementManager extends MouseAdapter
 	{
@@ -687,55 +689,84 @@ public class BaldEagle
 		{
 			final_cards[x] = new FinalStack();
 
-			final_cards[x].setXY((FINAL_POS.x + (x * Card.CARD_WIDTH)) + 10, FINAL_POS.y);
+			final_cards[x].setXY((FINAL_POS.x + (x * (Card.CARD_WIDTH+10))) + 10, FINAL_POS.y);
 			table.add(final_cards[x]);
 
 		}
+
+		// deal one card face up to foundation's first pile
+		final_cards[0].putFirst(deck.pop().setFaceup());
+
+		// initialize & place reserve
+        reserve = new CardStack(false);
+        reserve.setXY(DECK_POS.x + (int)(3.5 * (Card.CARD_WIDTH + 10)), PLAY_POS.y);
+        reserve.SPREAD=0;
+        table.add(reserve);
+
+        // deal 17 cards to reserve pile
+        for (int x = 0; x < 18; x++)
+        {
+            Card c = deck.pop().setFaceup();
+            reserve.putFirst(c);
+        }
+
 		// place new card distribution button
 		table.add(moveCard(newCardButton, DECK_POS.x, DECK_POS.y));
+
 		// initialize & place play (tableau) decks/stacks
 		playCardStack = new CardStack[NUM_PLAY_DECKS];
-		for (int x = 0; x < NUM_PLAY_DECKS; x++)
+		for (int x = 0; x < NUM_PLAY_DECKS / 2; x++)
 		{
 			playCardStack[x] = new CardStack(false);
-			playCardStack[x].setXY((DECK_POS.x + (x * (Card.CARD_WIDTH + 10))), PLAY_POS.y);
+			playCardStack[x].setXY((DECK_POS.x + (x * (Card.CARD_WIDTH + 10))), PLAY_POS.y + (x * 55));
 
 			table.add(playCardStack[x]);
 		}
 
-		// Dealing new game
+		int position = NUM_PLAY_DECKS / 2 - 1;
+		for (int x = NUM_PLAY_DECKS / 2; x < NUM_PLAY_DECKS; x++)
+		{
+			playCardStack[x] = new CardStack(false);
+			playCardStack[x].setXY((DECK_POS.x + (x * (Card.CARD_WIDTH + 10))), PLAY_POS.y + (position * 55));
+
+			table.add(playCardStack[x]);
+			position--;
+		}
+
+		// Deal 1 card face up to each tableau pile
 		for (int x = 0; x < NUM_PLAY_DECKS; x++)
 		{
-			int hld = 0;
 			Card c = deck.pop().setFaceup();
 			playCardStack[x].putFirst(c);
-
-			for (int y = x + 1; y < NUM_PLAY_DECKS; y++)
-			{
-				playCardStack[y].putFirst(c = deck.pop());
-			}
 		}
-		// reset time
+
+		// reset time and score
 		time = 0;
+		score = 0;
+		timer.cancel();
+		timer = new Timer();
 
-		newGameButton.addActionListener(new NewGameListener());
-		newGameButton.setBounds(0, TABLE_HEIGHT - 70, 120, 30);
+		if (newGameCount == 0)
+		{
+			newGameButton.addActionListener(new NewGameListener());
+			newGameButton.setBounds(0, TABLE_HEIGHT - 70, 120, 30);
+			showRulesButton.addActionListener(new ShowRulesListener());
+			showRulesButton.setBounds(120, TABLE_HEIGHT - 70, 120, 30);
+			newGameCount++;
+		}
 
-		showRulesButton.addActionListener(new ShowRulesListener());
-		showRulesButton.setBounds(120, TABLE_HEIGHT - 70, 120, 30);
-
-		gameTitle.setText("<b>Shamari's Solitaire</b> <br> COP3252 <br> Spring 2012");
+		gameTitle.setText("<b>Bald Eagle Solitaire</b>");
 		gameTitle.setEditable(false);
 		gameTitle.setOpaque(false);
-		gameTitle.setBounds(245, 20, 100, 100);
+		gameTitle.setBounds(720, 20, 150, 150);
 
 		scoreBox.setBounds(240, TABLE_HEIGHT - 70, 120, 30);
-		scoreBox.setText("Score: 0");
+		scoreBox.setText("Score: " + score);
 		scoreBox.setEditable(false);
 		scoreBox.setOpaque(false);
 
 		timeBox.setBounds(360, TABLE_HEIGHT - 70, 120, 30);
-		timeBox.setText("Seconds: 0");
+		timeBox.setText("Seconds: " + time);
 		timeBox.setEditable(false);
 		timeBox.setOpaque(false);
 
@@ -760,13 +791,12 @@ public class BaldEagle
 
 	public static void main(String[] args)
 	{
-
 		Container contentPane;
 
 		frame.setSize(TABLE_WIDTH, TABLE_HEIGHT);
 
 		table.setLayout(null);
-		table.setBackground(new Color(0, 180, 0));
+		table.setBackground(new Color(0, 180, 180));
 
 		contentPane = frame.getContentPane();
 		contentPane.add(table);
