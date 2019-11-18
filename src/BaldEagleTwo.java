@@ -300,7 +300,7 @@ public class BaldEagleTwo
 					{
 						card = c;
 						stopSearch = true;
-						System.out.println("Transfer Size: " + transferStack.showSize());
+						System.out.println("Transfer Size: " + transferStack.stackSize());
 						break;
 					}
 				}
@@ -308,7 +308,7 @@ public class BaldEagleTwo
 			}
 			// SHOW (WASTE) CARD OPERATIONS
 			// display new show card
-			if (newCardButton.contains(start) && deck.showSize() > 0)
+			if (newCardButton.contains(start) && deck.stackSize() > 0)
 			{
 				if (putBackOnDeck && prevCard != null)
 				{
@@ -319,7 +319,7 @@ public class BaldEagleTwo
 				}
 
 				System.out.print("poping deck ");
-				deck.showSize();
+				deck.stackSize();
 				if (prevCard != null)
 					table.remove(prevCard);
 				Card c = deck.pop().setFaceup();
@@ -419,7 +419,7 @@ public class BaldEagleTwo
 					}
 					if (!dest.empty() && dest.contains(stop) && validFinalStackMove(movedCard, dest.getLast()))
 					{
-						System.out.println("Destin" + dest.showSize());
+						System.out.println("Destin" + dest.stackSize());
 						dest.push(movedCard);
 						table.remove(prevCard);
 						dest.repaint();
@@ -442,7 +442,7 @@ public class BaldEagleTwo
 					dest = playCardStack[x];
 					// MOVING TO POPULATED STACK
 					if (card.getFaceStatus() && dest.contains(stop) && source != dest && !dest.empty()
-							&& validPlayStackMove(card, dest.getFirst()) && transferStack.showSize() == 1)
+							&& validPlayStackMove(card, dest.getFirst()) && transferStack.stackSize() == 1)
 					{
 						Card c;
 						if (sourceIsFinalDeck)
@@ -467,14 +467,14 @@ public class BaldEagleTwo
 						table.repaint();
 
 						System.out.print("Destination ");
-						dest.showSize();
+						dest.stackSize();
 						if (sourceIsFinalDeck)
 							setScore(15);
 						else
 							setScore(10);
 						validMoveMade = true;
 						break;
-					} else if (dest.empty() && card.getValue() == Card.Value.KING && transferStack.showSize() == 1)
+					} else if (dest.empty() && card.getValue() == Card.Value.KING && transferStack.stackSize() == 1)
 					{// MOVING TO EMPTY STACK, ONLY KING ALLOWED
 						Card c;
 						if (sourceIsFinalDeck)
@@ -499,7 +499,7 @@ public class BaldEagleTwo
 						table.repaint();
 
 						System.out.print("Destination ");
-						dest.showSize();
+						dest.stackSize();
 						setScore(5);
 						validMoveMade = true;
 						break;
@@ -587,7 +587,7 @@ public class BaldEagleTwo
 								table.repaint();
 
 								System.out.print("Destination ");
-								dest.showSize();
+								dest.stackSize();
 								card = null;
 								setScore(10);
 								validMoveMade = true;
@@ -613,7 +613,7 @@ public class BaldEagleTwo
 							table.repaint();
 
 							System.out.print("Destination ");
-							dest.showSize();
+							dest.stackSize();
 							card = null;
 							checkForWin = true;
 							setScore(10);
@@ -638,7 +638,7 @@ public class BaldEagleTwo
 				for (int x = 0; x < NUM_FINAL_DECKS; x++)
 				{
 					dest = final_cards[x];
-					if (dest.showSize() != 13)
+					if (dest.stackSize() != 13)
 					{
 						// one deck is not full, so game is not over
 						gameNotOver = true;

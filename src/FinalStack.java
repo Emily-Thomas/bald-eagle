@@ -41,7 +41,8 @@ class FinalStack extends CardStack
 		if (!empty())
 		{
 			add(BaldEagle.moveCard(this.getLast(), 1, 1));
-		} else
+		}
+		else
 		{
 			// draw back of card if empty
 			Graphics2D g2d = (Graphics2D) g;

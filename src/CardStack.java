@@ -15,13 +15,12 @@ class CardStack extends JComponent
 	protected final int NUM_CARDS = 52;
 	protected Vector<Card> v;
 	protected boolean playStack = false;
-	protected int SPREAD = 18;
+	protected int SPREAD = 18; // vertical distance between card components in a stack
 	protected int _x = 0;
 	protected int _y = 0;
 
 	public CardStack(boolean isDeck)
 	{
-		int f = 1;
 		this.setLayout(null);
 		v = new Vector<Card>();
 		if (isDeck)
@@ -34,7 +33,8 @@ class CardStack extends JComponent
 					v.add(new Card(suit, value));
 				}
 			}
-		} else
+		}
+		else
 		{
 			playStack = true;
 		}
@@ -58,7 +58,8 @@ class CardStack extends JComponent
 		if (!this.empty())
 		{
 			return v.get(0);
-		} else
+		}
+		else
 			return null;
 	}
 
@@ -68,7 +69,8 @@ class CardStack extends JComponent
 		if (!this.empty())
 		{
 			return v.lastElement();
-		} else
+		}
+		else
 			return null;
 	}
 
@@ -80,7 +82,8 @@ class CardStack extends JComponent
 			Card c = this.getFirst();
 			v.remove(0);
 			return c;
-		} else
+		}
+		else
 			return null;
 
 	}
@@ -97,7 +100,8 @@ class CardStack extends JComponent
 			Card c = v.lastElement();
 			v.remove(v.size() - 1);
 			return c;
-		} else
+		}
+		else
 			return null;
 	}
 
@@ -118,9 +122,8 @@ class CardStack extends JComponent
 
 	}
 
-	public int showSize()
+	public int stackSize()
 	{
-		System.out.println("Stck Size: " + v.size());
 		return v.size();
 	}
 
@@ -189,7 +192,8 @@ class CardStack extends JComponent
 				// setting x & y position
 				c.setWhereAmI(getXY());
 				prevWhereAmI = getXY();
-			} else
+			}
+			else
 			{
 				removeAll();
 			}
@@ -207,4 +211,4 @@ class CardStack extends JComponent
 
 		}
 	}
-}// END CardStack
+}
