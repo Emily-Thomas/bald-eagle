@@ -102,7 +102,8 @@ class Card extends JPanel
 	{
 		x = p.x;
 		y = p.y;
-
+        whereAmI.x = p.x;
+        whereAmI.y = p.y;
 	}
 
 	public void setSuit(Suit suit)

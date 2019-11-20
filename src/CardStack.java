@@ -1,6 +1,7 @@
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Vector;
 
@@ -22,7 +23,7 @@ class CardStack extends JComponent
 	public CardStack(boolean isDeck)
 	{
 		this.setLayout(null);
-		v = new Vector<Card>();
+		v = new Vector<>();
 		if (isDeck)
 		{
 			// set deck position
@@ -176,6 +177,7 @@ class CardStack extends JComponent
 	@Override
 	protected void paintComponent(Graphics g)
 	{
+	    setXY(getXY().x, getXY().y);
 		super.paintComponent(g);
 		if (playStack)
 		{
@@ -211,4 +213,19 @@ class CardStack extends JComponent
 
 		}
 	}
+
+	public String toString()
+    {
+        String stackContents = "[";
+
+        for (Card c : v)
+        {
+            stackContents += (c.getSuit() + " (" + c.getValue() + "), ");
+        }
+
+        stackContents = stackContents.replaceAll(", $", "");
+        stackContents += "]";
+
+        return stackContents;
+    }
 }
