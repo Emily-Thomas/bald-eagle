@@ -1,7 +1,6 @@
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Vector;
 

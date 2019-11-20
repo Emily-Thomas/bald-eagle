@@ -224,11 +224,12 @@ public class BaldEagle
 		private Card prevCard = null; // tracking card for waste stack
 		private Card movedCard = null; // card moved from waste stack
         private Card prevReserveCard = null; // tracking card for reserve stack
-        private Card movedReserveCard = null; // card moved from reserve stack
+        // private Card movedReserveCard = null; // card moved from reserve stack
 		private boolean sourceIsFinalDeck = false;
 		private boolean putBackOnDeck = true; // used for waste card recycling
 		private boolean checkForWin = false; // should we check if game is over?
 		private boolean gameOver = true; // easier to negate this than affirm it
+        private boolean isWaste;
 		private Point start = null; // where mouse was clicked
 		private Point stop = null; // where mouse was released
 		private Card card = null; // card to be moved
@@ -309,8 +310,10 @@ public class BaldEagle
 
 				for (int i = 0; i < turnOvers; i++)
                 {
+                    prevCard = waste.getLast();
 					if (prevCard != null)
 					{
+                        System.out.println("Removing prevCard: " + prevCard.getSuit() + " (" + prevCard.getValue() + ")");
 						table.remove(prevCard);
 					}
 
@@ -365,14 +368,17 @@ public class BaldEagle
 			if (newCardPlace.contains(start) && prevCard != null)
 			{
 				movedCard = prevCard;
+				System.out.println("prevCard: " + movedCard.getSuit() + " (" + movedCard.getValue() + ")");
+				isWaste = true;
 			}
 
 			// TODO reserve
 			// RESERVE CARD OPERATIONS
 			if (reserveCard.contains(start))
 			{
+			    isWaste = false;
 			    System.out.println("Reserve: " + reserve);
-				movedReserveCard = reserveCard;
+				movedCard = reserveCard;
 			}
 		}
 
@@ -404,7 +410,7 @@ public class BaldEagle
 			boolean validMoveMade = false;
 
 			// SHOW (WASTE) CARD OPERATIONS
-			if (movedCard != null)
+			if (movedCard != null && isWaste)
 			{
 				// Moving from SHOW TO PLAY
 				for (int x = 0; x < NUM_PLAY_DECKS; x++)
@@ -644,27 +650,27 @@ public class BaldEagle
 			} // end cycle through tableau decks
 
             // RESERVE CARD OPERATIONS
-            if (movedReserveCard != null)
+            if (movedCard != null && !isWaste)
             {
                 // Moving from RESERVE to TABLEAU
                 for (int x = 0; x < NUM_PLAY_DECKS; x++)
                 {
                     dest = tableauStacks[x];
                     // to empty play stack
-                    if (dest.empty() && movedReserveCard != null && dest.contains(stop))
+                    if (dest.empty() && movedCard != null && dest.contains(stop))
                     {
                         System.out.println("moving reserve card to empty spot");
-                        movedReserveCard.setXY(dest.getXY());
+                        movedCard.setXY(dest.getXY());
                         validMoveMade = relocateReserveCard(true);
                         break;
                     }
                     // to populated play stack
-                    if (movedReserveCard != null && dest.contains(stop) && !dest.empty()
+                    if (movedCard != null && dest.contains(stop) && !dest.empty()
                             && dest.getFirst().getFaceStatus()
-                            && validPlayStackMove(movedReserveCard, dest.getFirst()) && dest.stackSize() < 3)
+                            && validPlayStackMove(movedCard, dest.getFirst()) && dest.stackSize() < 3)
                     {
                         System.out.println("moving reserve card to tableau");
-                        movedReserveCard.setXY(dest.getFirst().getXY());
+                        movedCard.setXY(dest.getFirst().getXY());
                         validMoveMade = relocateReserveCard( true);
                         break;
                     }
@@ -677,15 +683,15 @@ public class BaldEagle
                     // matching the value of the first card in the Foundation can go first
                     if (dest.empty() && dest.contains(stop))
                     {
-                        if (movedReserveCard.getValue() == foundationStacks[0].getFirst().getValue()
-                                && !usedSuits.contains(movedReserveCard.getSuit()))
+                        if (movedCard.getValue() == foundationStacks[0].getFirst().getValue()
+                                && !usedSuits.contains(movedCard.getSuit()))
                         {
-                            usedSuits.add(movedReserveCard.getSuit());
+                            usedSuits.add(movedCard.getSuit());
                             relocateReserveCard(false);
                             break;
                         }
                     }
-                    if (!dest.empty() && dest.contains(stop) && validFinalStackMove(movedReserveCard, dest.getLast()))
+                    if (!dest.empty() && dest.contains(stop) && validFinalStackMove(movedCard, dest.getLast()))
                     {
                         System.out.println("Destination size: " + dest.stackSize());
                         relocateReserveCard(false);
@@ -754,7 +760,11 @@ public class BaldEagle
 			}
 
 			waste.pop();
-			table.remove(prevCard);
+			if (movedCard != null)
+			{
+                System.out.println("Removing movedCard: " + movedCard.getSuit() + " (" + movedCard.getValue() + ")");
+                table.remove(movedCard);
+            }
 
 			Card newWasteCard = waste.getLast();
 			if (newWasteCard != null)
@@ -775,17 +785,20 @@ public class BaldEagle
         {
             if (toTableau)
             {
-                dest.putFirst(movedReserveCard);
+                dest.putFirst(movedCard);
                 setScore(5);
             }
             else if (!toTableau) // to foundation
             {
-                dest.push(movedReserveCard);
+                dest.push(movedCard);
                 setScore(10);
             }
 
             reserve.pop();
-            table.remove(movedReserveCard);
+            if (movedCard != null)
+            {
+                table.remove(movedCard);
+            }
 
             Card newReserveCard = reserve.getLast();
             if (newReserveCard != null)
