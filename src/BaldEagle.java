@@ -63,6 +63,7 @@ public class BaldEagle
 	private static int newGameCount = 0;
 	private static int redeals = 2;
 	private static java.util.List<Card.Suit> usedSuits = new java.util.ArrayList<>(); // used suits in Foundations
+	private static GameStatus gamestatus;
 
 	// moves a card to abs location within a component
 	protected static Card moveCard(Card c, int x, int y)
@@ -210,7 +211,7 @@ public class BaldEagle
 		{
 			frame.setVisible(false);
 			frame.dispose();
-			MainMenu.main(new String[0]);
+			MainMenu.open();
 		}
 	}
 
@@ -223,13 +224,9 @@ public class BaldEagle
 	{
 		private Card prevCard = null; // tracking card for waste stack
 		private Card movedCard = null; // card moved from waste stack
-        private Card prevReserveCard = null; // tracking card for reserve stack
-        // private Card movedReserveCard = null; // card moved from reserve stack
-		private boolean sourceIsFinalDeck = false;
-		private boolean putBackOnDeck = true; // used for waste card recycling
 		private boolean checkForWin = false; // should we check if game is over?
 		private boolean gameOver = true; // easier to negate this than affirm it
-        private boolean isWaste;
+        private int isWaste = -1;
 		private Point start = null; // where mouse was clicked
 		private Point stop = null; // where mouse was released
 		private Card card = null; // card to be moved
@@ -267,9 +264,10 @@ public class BaldEagle
 		public void mousePressed(MouseEvent e)
 		{
 			start = e.getPoint();
-			boolean stopSearch = false;
 			statusBox.setText("");
 			transferStack.makeEmpty();
+			isWaste = -1;
+			boolean sourceObtained = false;
 
 			/*
 			 * Here we use transferStack to temporarily hold all the cards above
@@ -278,8 +276,11 @@ public class BaldEagle
 			 */
 			for (int x = 0; x < NUM_PLAY_DECKS; x++)
 			{
-				if (stopSearch)
+				if (sourceObtained)
+				{
 					break;
+				}
+
 				source = tableauStacks[x];
 				// pinpointing exact card pressed
 				for (Component ca : source.getComponents())
@@ -292,13 +293,24 @@ public class BaldEagle
 					if (c.contains(start) && source.contains(start) && c.getFaceStatus())
 					{
 						card = c;
-						stopSearch = true;
+						System.out.println("Card pressed: " + c.getSuit() + " (" + c.getValue() + ")");
 						System.out.println("Transfer Size: " + transferStack.stackSize());
+						System.out.println("[1] source: " + source);
+						sourceObtained = true;
 						break;
 					}
 				}
-
 			}
+
+			if (transferStack != null)
+			{
+				System.out.println("Transfer stack size: " + transferStack.stackSize());
+			}
+			if (transferStack.stackSize() == 1)
+			{
+				movedCard = transferStack.getLast();
+			}
+
 			// SHOW (WASTE) CARD OPERATIONS
 			// display new show card
 			if (newCardButton.contains(start) && deck.stackSize() > 0)
@@ -328,7 +340,7 @@ public class BaldEagle
 						table.repaint();
 						break;
                     }
-                    else if (c != null) // TODO waste UI does not update after playing a card
+                    else if (c != null)
 					{
 						c.setFaceup();
 						System.out.println("Deck size: " + deck.stackSize());
@@ -347,6 +359,7 @@ public class BaldEagle
 				System.out.println("Waste: " + waste);
 				System.out.println("Putting back on deck stack: ");
 				int wasteSize = waste.stackSize();
+				prevCard = waste.getLast();
 				table.remove(prevCard);
 
 				for (int i = 0; i < wasteSize; i++)
@@ -364,19 +377,21 @@ public class BaldEagle
 				}
             }
 
-			// preparing to move show card
+			// preparing to move show card TODO fix waste stack coordinates
+			newCardPlace.setXY(new Point(SHOW_POS.x, SHOW_POS.y));
+			System.out.println("newCardPlace coords: " + newCardPlace.getXY().x + ", " + newCardPlace.getXY().y);
+			prevCard = waste.getLast();
 			if (newCardPlace.contains(start) && prevCard != null)
 			{
 				movedCard = prevCard;
 				System.out.println("prevCard: " + movedCard.getSuit() + " (" + movedCard.getValue() + ")");
-				isWaste = true;
+				isWaste = 1;
 			}
 
-			// TODO reserve
 			// RESERVE CARD OPERATIONS
 			if (reserveCard.contains(start))
 			{
-			    isWaste = false;
+			    isWaste = 0;
 			    System.out.println("Reserve: " + reserve);
 				movedCard = reserveCard;
 			}
@@ -408,9 +423,23 @@ public class BaldEagle
 			stop = e.getPoint();
 			// used for status bar updates
 			boolean validMoveMade = false;
+			// TODO waste stack
+			if (card != null)
+			{
+				System.out.println("[1] card: " + card.getSuit() + " (" + card.getValue() + ")");
+			}
+			if (source != null)
+			{
+				System.out.println("[2] source: " + source);
+			}
+			if (movedCard != null)
+			{
+				System.out.println("[1] movedCard: " + movedCard.getSuit() + " (" + movedCard.getValue() + ")");
+			}
+			System.out.println(isWaste);
 
 			// SHOW (WASTE) CARD OPERATIONS
-			if (movedCard != null && isWaste)
+			if (movedCard != null && isWaste==1)
 			{
 				// Moving from SHOW TO PLAY
 				for (int x = 0; x < NUM_PLAY_DECKS; x++)
@@ -446,39 +475,38 @@ public class BaldEagle
                                 && !usedSuits.contains(movedCard.getSuit()))
 						{
 							usedSuits.add(movedCard.getSuit());
-						    relocateWasteCard(false);
+						    validMoveMade = relocateWasteCard(false);
 							break;
 						}
 					}
 					if (!dest.empty() && dest.contains(stop) && validFinalStackMove(movedCard, dest.getLast()))
 					{
 						System.out.println("Destination size: " + dest.stackSize());
-						relocateWasteCard(false);
+						validMoveMade = relocateWasteCard(false);
 						checkForWin = true;
 						break;
 					}
 				}
 			} // END WASTE STACK OPERATIONS
-
-			// TABLEAU STACK OPERATIONS
-			if (card != null && source != null)
+			else if (card != null && source != null) // TABLEAU STACK OPERATIONS
 			{ // Moving SINGLE card from PLAY TO PLAY
 				for (int x = 0; x < NUM_PLAY_DECKS; x++)
 				{
 					dest = tableauStacks[x];
-					// MOVING TO POPULATED STACK
+					// MOVING TO POPULATED STACK TODO be able to a card from a tableau stack to a different tableau stack
+					if (!dest.empty())
+					{
+						System.out.println("Destination first: " + dest.getFirst().getSuit() + " (" + dest.getFirst().getValue() + ")");
+					}
 					if (card.getFaceStatus() && dest.contains(stop) && source != dest && !dest.empty()
                             && dest.stackSize() < 3 && validPlayStackMove(card, dest.getFirst())
                             && transferStack.stackSize() == 1)
 					{
-						Card c;
-						if (sourceIsFinalDeck)
-							c = source.pop();
-						else
-							c = source.popFirst();
-
+						Card c = source.popFirst();
+						System.out.println("[1] Tableau card being moved: " + c.getSuit() + " (" + c.getValue() + ")");
 						c.repaint();
-						// if playstack, turn next card up
+
+						// if stack of cards, turn next card up
 						if (source.getFirst() != null)
 						{
 							Card temp = source.getFirst().setFaceup();
@@ -490,26 +518,21 @@ public class BaldEagle
 						dest.putFirst(c);
 
 						dest.repaint();
-
 						table.repaint();
 
 						System.out.println("Destination Size: " + dest.stackSize());
-						if (sourceIsFinalDeck)
-							setScore(15);
-						else
-							setScore(10);
+						setScore(10);
+						if (source.getFirst() == null) { fillEmptyTableau(); }
 						validMoveMade = true;
+
 						break;
 					}
-					else if (dest.empty() && dest.contains(stop) && transferStack.stackSize() == 1) // TODO fill empty spaces from reserve
+					else if (dest.empty() && dest.contains(stop) && transferStack.stackSize() == 1)
 					{ // MOVING TO EMPTY STACK
-						Card c;
-						if (sourceIsFinalDeck)
-							c = source.pop();
-						else
-							c = source.popFirst();
-
+						Card c = source.popFirst();
+						System.out.println("[2] Tableau card being moved: " + c.getSuit() + " (" + c.getValue() + ")");
 						c.repaint();
+
 						// if playstack, turn next card up
 						if (source.getFirst() != null)
 						{
@@ -522,12 +545,13 @@ public class BaldEagle
 						dest.putFirst(c);
 
 						dest.repaint();
-
 						table.repaint();
 
 						System.out.println("Destination Size: " + dest.stackSize());
 						setScore(5);
+						if (source.getFirst() == null) { fillEmptyTableau(); }
 						validMoveMade = true;
+
 						break;
 					}
 					// Moving STACK of cards from PLAY TO PLAY
@@ -539,7 +563,8 @@ public class BaldEagle
 						{
 							System.out.println("popping from transfer: " + transferStack.getFirst().getValue());
 							dest.putFirst(transferStack.popFirst());
-							source.popFirst();
+							Card c = source.popFirst();
+							System.out.println("[3] Tableau card being moved: " + c.getSuit() + " (" + c.getValue() + ")");
 						}
 						if (source.getFirst() != null)
 						{
@@ -553,7 +578,9 @@ public class BaldEagle
 
 						table.repaint();
 						setScore(5);
+						if (source.getFirst() == null) { fillEmptyTableau(); }
 						validMoveMade = true;
+
 						break;
 					}
 					// to POPULATED STACK
@@ -566,7 +593,8 @@ public class BaldEagle
 						{
 							System.out.println("popping from transfer: " + transferStack.getFirst().getValue());
 							dest.putFirst(transferStack.popFirst());
-							source.popFirst();
+							Card c = source.popFirst();
+							System.out.println("[4] Tableau card being moved: " + c.getSuit() + " (" + c.getValue() + ")");
 						}
 						if (source.getFirst() != null)
 						{
@@ -580,24 +608,33 @@ public class BaldEagle
 
 						table.repaint();
 						setScore(5);
+						if (source.getFirst() == null) { fillEmptyTableau(); }
 						validMoveMade = true;
+
 						break;
 					}
 				}
 				// from PLAY TO FINAL
 				for (int x = 0; x < NUM_FINAL_DECKS; x++)
 				{
-					dest = foundationStacks[x];
+					dest = foundationStacks[x]; // TODO be able to move top of a stack of tableau cards to an existing foundation stack
+					if (!dest.empty())
+					{
+						System.out.println("Destination last: " + dest.getLast().getSuit() + " (" + dest.getLast().getValue() + ")");
+					}
 
 					if (card.getFaceStatus() && source != null && dest.contains(stop) && source != dest)
 					{ // TO EMPTY STACK
+						System.out.println("move to empty final");
 						if (dest.empty()) // empty final should only take card dealt to first pile of the foundation
 						{
+							System.out.println("final empty");
 							if (card.getValue() == foundationStacks[0].getFirst().getValue() && !usedSuits.contains(card.getSuit()))
 							{
+								System.out.println("card matches first foundation card");
 								Card c = source.popFirst();
-								System.out.println("Card to final: " + card.getSuit() + ", " + card.getValue());
-								usedSuits.add(card.getSuit());
+								System.out.println("[5] Card to final: " + card.getSuit() + ", " + card.getValue());
+								usedSuits.add(c.getSuit());
 								c.repaint();
 
 								if (source.getFirst() != null)
@@ -616,14 +653,16 @@ public class BaldEagle
 								System.out.println("Destination Size: " + dest.stackSize());
 								card = null;
 								setScore(10);
+								if (source.getFirst() == null) { fillEmptyTableau(); }
 								validMoveMade = true;
+
 								break;
 							} // TO POPULATED STACK
 						}
 						else if (validFinalStackMove(card, dest.getLast()))
 						{
 							Card c = source.popFirst();
-							// System.out.println("Card: " + c.getSuit() + ", " + c.getValue());
+							System.out.println("[6] Tableau card being moved: " + c.getSuit() + " (" + c.getValue() + ")");
 							c.repaint();
 							if (source.getFirst() != null)
 							{
@@ -642,28 +681,28 @@ public class BaldEagle
 							card = null;
 							checkForWin = true;
 							setScore(10);
+							if (source.getFirst() == null) { fillEmptyTableau(); }
 							validMoveMade = true;
+
 							break;
 						}
 					}
 				}
 			} // end cycle through tableau decks
-
-            // RESERVE CARD OPERATIONS
-            if (movedCard != null && !isWaste)
+            if (movedCard != null && isWaste==0) // RESERVE CARD OPERATIONS
             {
                 // Moving from RESERVE to TABLEAU
                 for (int x = 0; x < NUM_PLAY_DECKS; x++)
                 {
                     dest = tableauStacks[x];
                     // to empty play stack
-                    if (dest.empty() && movedCard != null && dest.contains(stop))
-                    {
-                        System.out.println("moving reserve card to empty spot");
-                        movedCard.setXY(dest.getXY());
-                        validMoveMade = relocateReserveCard(true);
-                        break;
-                    }
+                    if (dest.empty() && movedCard != null)
+					{
+						System.out.println("moving reserve card to empty spot");
+						movedCard.setXY(dest.getXY());
+						validMoveMade = relocateReserveCard(true);
+						break;
+					}
                     // to populated play stack
                     if (movedCard != null && dest.contains(stop) && !dest.empty()
                             && dest.getFirst().getFaceStatus()
@@ -714,7 +753,6 @@ public class BaldEagle
 			// CHECKING FOR WIN
 			if (checkForWin)
 			{
-				boolean gameNotOver = false;
 				// cycle through final decks, if they're all full then game over
 				for (int x = 0; x < NUM_FINAL_DECKS; x++)
 				{
@@ -722,12 +760,15 @@ public class BaldEagle
 					if (dest.stackSize() != 13)
 					{
 						// one deck is not full, so game is not over
-						gameNotOver = true;
+						gameOver = false;
 						break;
 					}
+					else
+                    {
+                        gameOver = true;
+                    }
 				}
-				if (!gameNotOver)
-					gameOver = true;
+
 			}
 
 			if (checkForWin && gameOver)
@@ -741,11 +782,11 @@ public class BaldEagle
 			source = null;
 			dest = null;
 			card = null;
-			sourceIsFinalDeck = false;
 			checkForWin = false;
 			gameOver = false;
 		}
 
+		// update waste card location
 		private boolean relocateWasteCard(boolean toTableau)
 		{
 			if (toTableau)
@@ -776,11 +817,12 @@ public class BaldEagle
 
 			table.repaint();
 			movedCard = newWasteCard;
+			isWaste = -1;
 
-			putBackOnDeck = false;
 			return true;
 		}
 
+		// update reserve card location
         private boolean relocateReserveCard(boolean toTableau)
         {
             if (toTableau)
@@ -812,6 +854,14 @@ public class BaldEagle
             reserveCard = newReserveCard;
             return true;
         }
+
+		// fill empty tableau stacks from reserve
+		private void fillEmptyTableau()
+		{
+			System.out.println("reserve card: " + reserveCard.getSuit() + " (" + reserveCard.getValue() + ")");
+			movedCard = reserveCard;
+			isWaste = 0;
+		}
 	}
 
 	private static void playNewGame()
@@ -979,7 +1029,6 @@ public class BaldEagle
 	public static void main(String[] args)
 	{
 		Container contentPane;
-
 		frame.setSize(TABLE_WIDTH, TABLE_HEIGHT);
 
 		table.setLayout(null);

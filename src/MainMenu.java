@@ -32,9 +32,10 @@ import java.io.Console;
 
 public class MainMenu
 {
-    private static JLabel header = new JLabel("Bald Eagle Solitaire");
+    private static JLabel header = new JLabel("Solitaire Pack");
     private static JButton playGameButton = new JButton("Play Game");
     private static JButton viewStatisticsButton = new JButton("Statistics");
+    private static JButton exitButton = new JButton("Exit");
     private static JList gameList = new JList();
     private static int selectedGame;
     public static final int TABLE_HEIGHT = Card.CARD_HEIGHT * 4;
@@ -50,9 +51,14 @@ public class MainMenu
 		public void actionPerformed(ActionEvent e)
 		{
             selectedGame = gameList.getSelectedIndex();
-            if (selectedGame == 0) {
+            if (selectedGame == 0)
+            {
+                frame.setVisible(false);
+                frame.dispose();
                 BaldEagle.main(new String[0]);
-            } else if (selectedGame == 1) {
+            }
+            else if (selectedGame == 1)
+            {
                 BaldEagleTwo.main(new String[0]);
             }
 		}
@@ -69,32 +75,49 @@ public class MainMenu
 
     }
 
+    private static class exitListener implements ActionListener
+    {
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            frame.dispose();
+        }
+    }
+
     public static void initializeMenu()
     {
-        playGameButton.setBounds(325, 200, 100, 30);
+        playGameButton.setBounds(325, 260, 100, 30);
         playGameButton.addActionListener(new PlayGameListener());
 
-        viewStatisticsButton.setBounds(325, 260, 100, 30);
+        viewStatisticsButton.setBounds(325, 300, 100, 30);
         viewStatisticsButton.addActionListener(new ViewStatisticsListener());
+
+        exitButton.setBounds(325, 340, 100, 30);
+        exitButton.addActionListener(new exitListener());
 
         header.setFont(new Font("Helvetica",Font.ITALIC+Font.BOLD, 57));
         header.setForeground(Color.WHITE);
-        header.setBounds(125, 0, 600, 100);
+        header.setBounds(210, 0, 600, 100);
 
-        String games[] = {"Bald Eagle Solitaire", "Bald Eagle Solitaire(Version 2)"};
+        String games[] = {"Bald Eagle", "Binary Star", "Bonanza Creek", "Betsy Ross"};
         gameList = new JList(games);
-        gameList.setBounds(275, 160, 200, 40);
+        gameList.setBounds(275, 160, 200, 75);
 
         table.add(gameList);
         table.add(header);
         table.add(playGameButton);
         table.add(viewStatisticsButton);
+        table.add(exitButton);
+    }
+
+    public static void open()
+    {
+        frame.setVisible(true);
     }
     
     public static void main(String[] args)
 	{
         Container contentPane;
-
 		frame.setSize(TABLE_WIDTH, TABLE_HEIGHT);
 
 		table.setLayout(null);
