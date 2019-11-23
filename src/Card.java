@@ -106,6 +106,14 @@ class Card extends JPanel
         whereAmI.y = p.y;
 	}
 
+	public void setXY(int xCoord, int yCoord)
+	{
+		x = xCoord;
+		y = yCoord;
+		whereAmI.x = xCoord;
+		whereAmI.y = yCoord;
+	}
+
 	public void setSuit(Suit suit)
 	{
 		_suit = suit;
@@ -232,5 +240,4 @@ class Card extends JPanel
 		}
 
 	}
-
-}// END Card
+}

@@ -3,6 +3,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -40,7 +42,7 @@ public class BaldEagle
 	protected static final JPanel table = new JPanel();
 	// other components
 	private static JEditorPane gameTitle = new JEditorPane("text/html", "");
-	private static JButton showRulesButton = new JButton("Show Rules");
+	private static JButton showRulesButton = new JButton("Rules");
 	private static JButton newGameButton = new JButton("New Game");
 	private static JButton toggleTimerButton = new JButton("Pause Timer");
 	private static JButton mainMenuButton = new JButton("Main Menu");
@@ -63,7 +65,11 @@ public class BaldEagle
 	private static int newGameCount = 0;
 	private static int redeals = 2;
 	private static java.util.List<Card.Suit> usedSuits = new java.util.ArrayList<>(); // used suits in Foundations
-	private static GameStatus gamestatus;
+	private static GameStatus gameStatus;
+	private static FileWriter fileWriter;
+	private static PrintWriter printWriter;
+	private static BaldEagle baldEagle;
+	private static boolean statsExist;
 
 	// moves a card to abs location within a component
 	protected static Card moveCard(Card c, int x, int y)
@@ -76,8 +82,8 @@ public class BaldEagle
 	// add/subtract points based on gameplay actions
 	protected static void setScore(int deltaScore)
 	{
-		BaldEagle.score += deltaScore;
-		String newScore = "Score: " + BaldEagle.score;
+		score += deltaScore;
+		String newScore = "Score: " + score;
 		scoreBox.setText(newScore);
 		scoreBox.repaint();
 	}
@@ -139,7 +145,7 @@ public class BaldEagle
 		@Override
 		public void actionPerformed(ActionEvent e)
 		{
-			playNewGame();
+			baldEagle.playNewGame();
 		}
 
 	}
@@ -152,13 +158,22 @@ public class BaldEagle
 			toggleTimer();
 			if (!timeRunning)
 			{
+				gameStatus.setGameStatusFlag(3);
 				toggleTimerButton.setText("Start Timer");
-			} else
+				int result = JOptionPane.showOptionDialog(frame, "Game paused: click OK to resume",
+						"Message", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
+						null, null, null);
+				if (result == 0 || result == 1)
+				{
+					toggleTimer();
+					gameStatus.setGameStatusFlag(0);
+				}
+			}
+			if (timeRunning)
 			{
 				toggleTimerButton.setText("Pause Timer");
 			}
 		}
-
 	}
 
 	private static class ShowRulesListener implements ActionListener
@@ -169,7 +184,6 @@ public class BaldEagle
 			JDialog ruleFrame = new JDialog(frame, true);
 			ruleFrame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			ruleFrame.setSize(TABLE_WIDTH, TABLE_HEIGHT);
-			JScrollPane scroll;
 			JEditorPane rulesTextPane = new JEditorPane("text/html", "");
 			rulesTextPane.setEditable(false);
 			String rulesText = "<b>Bald Eagle Solitaire Rules</b>"
@@ -209,6 +223,12 @@ public class BaldEagle
 		@Override
 		public void actionPerformed(ActionEvent e)
 		{
+			if (gameStatus != null)
+			{
+				gameStatus.setGameScore(score);
+				gameStatus.setGameTime(time);
+				Statistics.updateStatistics(gameStatus, "bald_eagle");
+			}
 			frame.setVisible(false);
 			frame.dispose();
 			MainMenu.open();
@@ -223,11 +243,11 @@ public class BaldEagle
 	private static class CardMovementManager extends MouseAdapter
 	{
 		private Card prevCard = null; // tracking card for waste stack
-		private Card movedCard = null; // card moved from waste stack
+		private static Card movedCard = null; // card moved from waste stack
 		private boolean checkForWin = false; // should we check if game is over?
 		private boolean gameOver = true; // easier to negate this than affirm it
         private int isWaste = -1;
-		private Point start = null; // where mouse was clicked
+		private static Point start = null; // where mouse was clicked
 		private Point stop = null; // where mouse was released
 		private Card card = null; // card to be moved
 		// used for moving single cards
@@ -377,7 +397,7 @@ public class BaldEagle
 				}
             }
 
-			// preparing to move show card TODO fix waste stack coordinates
+			// preparing to move show card
 			newCardPlace.setXY(new Point(SHOW_POS.x, SHOW_POS.y));
 			System.out.println("newCardPlace coords: " + newCardPlace.getXY().x + ", " + newCardPlace.getXY().y);
 			prevCard = waste.getLast();
@@ -402,6 +422,22 @@ public class BaldEagle
 		{
 			int x = e.getX();
 			int y = e.getY();
+			Point p = e.getPoint();
+
+			if (movedCard != null)
+			{
+//				cursX = start.x - movedCard.getWhereAmI().x;
+//				cursY = start.y - movedCard.getWhereAmI().y;
+//				table.remove(movedCard);
+//				int xLoc = p.x - cursX;
+//				int yLoc = p.y - cursY;
+//				System.out.println("location: " + xLoc + ", " + yLoc);
+//				movedCard.setXY(xLoc, yLoc);
+//				table.add(moveCard(movedCard, xLoc, yLoc));
+//				movedCard.repaint();
+//				table.repaint();
+			}
+
 			if (transferStack == null && card != null)
             {
                 cursX = start.x - card.getWhereAmI().x;
@@ -409,7 +445,7 @@ public class BaldEagle
             }
             if (transferStack != null)
             {
-                Point p = e.getPoint();
+                p = e.getPoint();
                 transferStack.setXY(p.x - cursX, p.y - cursY);
 
                 table.repaint();
@@ -423,7 +459,6 @@ public class BaldEagle
 			stop = e.getPoint();
 			// used for status bar updates
 			boolean validMoveMade = false;
-			// TODO waste stack
 			if (card != null)
 			{
 				System.out.println("[1] card: " + card.getSuit() + " (" + card.getValue() + ")");
@@ -493,7 +528,7 @@ public class BaldEagle
 				for (int x = 0; x < NUM_PLAY_DECKS; x++)
 				{
 					dest = tableauStacks[x];
-					// MOVING TO POPULATED STACK TODO be able to a card from a tableau stack to a different tableau stack
+					// MOVING TO POPULATED STACK
 					if (!dest.empty())
 					{
 						System.out.println("Destination first: " + dest.getFirst().getSuit() + " (" + dest.getFirst().getValue() + ")");
@@ -617,7 +652,7 @@ public class BaldEagle
 				// from PLAY TO FINAL
 				for (int x = 0; x < NUM_FINAL_DECKS; x++)
 				{
-					dest = foundationStacks[x]; // TODO be able to move top of a stack of tableau cards to an existing foundation stack
+					dest = foundationStacks[x];
 					if (!dest.empty())
 					{
 						System.out.println("Destination last: " + dest.getLast().getSuit() + " (" + dest.getLast().getValue() + ")");
@@ -773,6 +808,7 @@ public class BaldEagle
 
 			if (checkForWin && gameOver)
 			{
+				gameStatus.setGameStatusFlag(2);
 				JOptionPane.showMessageDialog(table, "Congratulations! You've Won!");
 				statusBox.setText("Game Over!");
 			}
@@ -780,6 +816,7 @@ public class BaldEagle
 			start = null;
 			stop = null;
 			source = null;
+			movedCard = null;
 			dest = null;
 			card = null;
 			checkForWin = false;
@@ -864,7 +901,7 @@ public class BaldEagle
 		}
 	}
 
-	private static void playNewGame()
+	private void playNewGame()
 	{
 		deck = new CardStack(true); // deal 52 cards
 		deck.shuffle();
@@ -956,23 +993,33 @@ public class BaldEagle
 			tableauStacks[x].putFirst(c);
 		}
 
+		if (gameStatus != null)
+		{
+			gameStatus.setGameScore(score);
+			gameStatus.setGameTime(time);
+			Statistics.updateStatistics(gameStatus, "bald_eagle");
+		}
+
 		// reset time and score
 		time = 0;
 		score = 0;
 		timer.cancel();
 		timer = new Timer();
 
-		mainMenuButton.setBounds(0, TABLE_HEIGHT - 78, 120, 40);
-		mainMenuButton.addActionListener(new mainMenuListener());
-
 		if (newGameCount == 0)
 		{
+			mainMenuButton.setBounds(0, TABLE_HEIGHT - 78, 120, 40);
+			mainMenuButton.addActionListener(new mainMenuListener());
 			newGameButton.addActionListener(new NewGameListener());
 			newGameButton.setBounds(120, TABLE_HEIGHT - 78, 120, 40);
 			showRulesButton.addActionListener(new ShowRulesListener());
 			showRulesButton.setBounds(240, TABLE_HEIGHT - 78, 120, 40);
+		    toggleTimerButton.setBounds(600, TABLE_HEIGHT - 78, 125, 40);
+			toggleTimerButton.addActionListener(new ToggleTimerListener());
 			newGameCount++;
 		}
+
+		toggleTimerButton.setText("Pause Timer");
 
 		gameTitle.setText("<b><font face=\"Arial\" size=\"14\">Bald Eagle Solitaire</font></b>");
 		gameTitle.setEditable(false);
@@ -993,9 +1040,6 @@ public class BaldEagle
 
 		startTimer();
 
-		toggleTimerButton.setBounds(600, TABLE_HEIGHT - 78, 125, 40);
-		toggleTimerButton.addActionListener(new ToggleTimerListener());
-
 		statusBox.setBounds(725, TABLE_HEIGHT - 78, 180, 40);
 		statusBox.setHorizontalAlignment(JTextField.CENTER);
 		statusBox.setEditable(false);
@@ -1013,6 +1057,9 @@ public class BaldEagle
 		redealsBox.setEditable(false);
 		redealsBox.setOpaque(false);
 
+		gameStatus = new GameStatus();
+		gameStatus.setGameStatusFlag(0); // loss by default
+
 		table.add(statusBox);
 		table.add(toggleTimerButton);
 		table.add(gameTitle);
@@ -1026,8 +1073,14 @@ public class BaldEagle
 		table.repaint();
 	}
 
+	public static GameStatus getGameStatus()
+	{
+		return gameStatus;
+	}
+
 	public static void main(String[] args)
 	{
+		gameStatus = null;
 		Container contentPane;
 		frame.setSize(TABLE_WIDTH, TABLE_HEIGHT);
 
@@ -1039,12 +1092,12 @@ public class BaldEagle
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLocationRelativeTo(null); // center frame on screen
 
-		playNewGame();
+		baldEagle = new BaldEagle();
+		baldEagle.playNewGame();
 
 		table.addMouseListener(new CardMovementManager());
 		table.addMouseMotionListener(new CardMovementManager());
 
 		frame.setVisible(true);
-
 	}
 }

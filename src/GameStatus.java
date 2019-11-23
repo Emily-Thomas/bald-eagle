@@ -19,7 +19,7 @@ public class GameStatus implements Serializable
 	/**
 	 * Creates a new gameStatus object using provided flag, score, time, and file object
 	 * 
-	 * @param statusFlag     game status flag: 0 = loss, 1 = forfeit, 2 = win, &gt;2 = pause, &lt;0 = error
+	 * @param statusFlag     game status flag: 0 = loss, 1 = forfeit, 2 = win, > 2 = pause, < 0 = error
 	 * @param score          game score
 	 * @param time           game time in seconds
 	 * @param saveFile       java.io.File object for saving the game state          
